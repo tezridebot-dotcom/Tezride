@@ -8,8 +8,9 @@ async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """
-            CREATE TABLE IF NOT EXISTS replied_users (
-                user_id     INTEGER PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS replies (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER,
                 first_name  TEXT,
                 group_id    INTEGER,
                 replied_at  INTEGER
@@ -30,19 +31,21 @@ async def init_db():
 
 
 async def has_replied(user_id: int) -> bool:
+    """Shu odamga kamida bitta marta javob yozilganmi (REPLY_ONCE_PER_USER=true uchun)."""
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
-            "SELECT 1 FROM replied_users WHERE user_id = ?", (user_id,)
+            "SELECT 1 FROM replies WHERE user_id = ? LIMIT 1", (user_id,)
         )
         row = await cur.fetchone()
         return row is not None
 
 
 async def log_reply(user_id: int, first_name: str, group_id: int):
+    """Har bir yuborilgan javob alohida qator sifatida yoziladi (statistika aniq chiqishi uchun)."""
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """
-            INSERT OR IGNORE INTO replied_users (user_id, first_name, group_id, replied_at)
+            INSERT INTO replies (user_id, first_name, group_id, replied_at)
             VALUES (?, ?, ?, ?)
             """,
             (user_id, first_name, group_id, int(time.time())),
@@ -77,25 +80,25 @@ async def get_stats() -> dict:
     month_ago = now - 30 * 24 * 3600
 
     async with aiosqlite.connect(DB_PATH) as db:
-        cur = await db.execute("SELECT COUNT(*) FROM replied_users")
-        total_users = (await cur.fetchone())[0]
+        cur = await db.execute("SELECT COUNT(*) FROM replies")
+        total_messages = (await cur.fetchone())[0]
 
         cur = await db.execute("SELECT COUNT(*) FROM groups WHERE active = 1")
         total_groups = (await cur.fetchone())[0]
 
         cur = await db.execute(
-            "SELECT COUNT(*) FROM replied_users WHERE replied_at >= ?", (week_ago,)
+            "SELECT COUNT(*) FROM replies WHERE replied_at >= ?", (week_ago,)
         )
-        weekly_users = (await cur.fetchone())[0]
+        weekly_messages = (await cur.fetchone())[0]
 
         cur = await db.execute(
-            "SELECT COUNT(*) FROM replied_users WHERE replied_at >= ?", (month_ago,)
+            "SELECT COUNT(*) FROM replies WHERE replied_at >= ?", (month_ago,)
         )
-        monthly_users = (await cur.fetchone())[0]
+        monthly_messages = (await cur.fetchone())[0]
 
     return {
-        "total_users": total_users,
+        "total_messages": total_messages,
         "total_groups": total_groups,
-        "weekly_users": weekly_users,
-        "monthly_users": monthly_users,
+        "weekly_messages": weekly_messages,
+        "monthly_messages": monthly_messages,
     }
