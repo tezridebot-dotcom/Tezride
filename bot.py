@@ -49,10 +49,10 @@ async def stats_text() -> str:
     s = await db.get_stats()
     return (
         "📊 <b>Admin panel</b>\n\n"
-        f"👥 Jami javob berilgan odamlar: <b>{s['total_users']}</b>\n"
+        f"📨 Jami yuborilgan xabarlar: <b>{s['total_messages']}</b>\n"
         f"👪 Bot turgan guruhlar soni: <b>{s['total_groups']}</b>\n"
-        f"🗓 So'nggi 7 kunda javob berilganlar: <b>{s['weekly_users']}</b>\n"
-        f"📅 So'nggi 30 kunda javob berilganlar: <b>{s['monthly_users']}</b>"
+        f"🗓 So'nggi 7 kunda yuborilgan xabarlar: <b>{s['weekly_messages']}</b>\n"
+        f"📅 So'nggi 30 kunda yuborilgan xabarlar: <b>{s['monthly_messages']}</b>"
     )
 
 
